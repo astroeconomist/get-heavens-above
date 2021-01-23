@@ -29,27 +29,30 @@ def h2hms(time):
 
 def getjd(time):  # 计算儒略日，输入datetime类型，输出浮点数
     y = time.year if time.month > 2 else time.year - 1
-    m = time.month-3 if time.month > 2 else time.month + 12
+    m = time.month if time.month > 2 else time.month + 12
     d = time.day
     h = time.hour
     minute = time.minute
     s = time.second + time.microsecond / 1000000
-    jd = 1721103.5 + floor(365.25 * y) + floor(30.60 *
-                                               m + 0.5) + d + h/24 + minute / (24*60) + s/86400
+    a = floor(y / 100)
+    b = 2 - a + floor(a / 4)
+    jd = floor(365.25 * (y + 4716)) + floor(30.6 * (m + 1)) + d + b - 1524.5 + h/24 + minute / (24*60) + s/86400                                        
     return jd
 
 
 def get_date_jd(time):  # 计算零时的儒略日，输入datetime类型，输出浮点数
     y = time.year if time.month > 2 else time.year - 1
-    m = time.month-3 if time.month > 2 else time.month + 12
+    m = time.month if time.month > 2 else time.month + 12
     d = time.day
-    jd = 1721103.5 + floor(365.25 * y) + floor(30.60 * m + 0.5) + d
+    a = floor(y / 100)
+    b = 2 - a + floor(a / 4)
+    jd = floor(365.25 * (y + 4716)) + floor(30.6 * (m + 1)) + d +b - 1524.5
     return jd
 
 
 def getsittime(jd, lon):  # 计算恒星时，输入儒略日和经度，输出角度制恒星时
-    t = jd-2451544.5
-    return (99.967794687 + t * (360.98564736628603 + t * (2.907879e-13 - 5.302e-22 * t)) + lon) % 360
+    t = (jd-2451545.0) / 36525
+    return (280.46061837 + 360.98564736629 * (jd-2451545.0) + t*t*(0.000387933 - t /38710000 ) + lon) % 360
 
 
 def getsit(jd, lon):  # 计算恒星时，输入儒略日和经度，输出hh:mm:ss.ss
@@ -150,6 +153,7 @@ def sun_transit_time(jd, lon):  # 计算太阳上中天时刻，输入当天UT�
         ra = sun_ra(jd + t / 360)
         sit = getsittime(jd + t / 360, lon)
         t += (ra - sit) * SIT
+        t %= 360
     return t / 15
 
 
@@ -157,7 +161,7 @@ def sun_rise_time(jd, lon, lat):  # 计算日出时间，输入当天UT零点的
     h0 = deg2rad(-0.8333)
     lat = deg2rad(lat)
     t = 0.0  # 平太阳时,单位角度
-    for _ in range(20):
+    for _ in range(10):
         ra = sun_ra(jd + t / 360)
         dec = deg2rad(sun_dec(jd + t / 360))
         sit = getsittime(jd + t / 360, lon)
@@ -212,4 +216,3 @@ def evening_twilight_time(jd, lon, lat):  # 计算昏影终时间，输入当天
             sit1 = sit1 + 360
         t += (sit1 - sit) * SIT
     return t/15
-
